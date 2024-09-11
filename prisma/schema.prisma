@@ -12,3 +12,85 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  role      String    // "employer" or "jobseeker"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  employer  Employer?
+  jobSeeker JobSeeker?
+}
+
+model ContactInfo {
+  id               Int        @id @default(autoincrement())
+  email            String     @unique
+  website_address  String?
+  geoLocation      String?
+  phone            String?
+  employer         Employer?
+  jobSeeker        JobSeeker?
+}
+
+model Job_category {
+  id      Int       @id @default(autoincrement())
+  name    String    @unique
+  vacancies Vacancy[]
+}
+
+model Employer {
+  id                Int         @id @default(autoincrement())
+  user              User        @relation(fields: [userId], references: [id])
+  userId            Int         @unique
+  companyName       String      @unique
+  contactInfo       ContactInfo @relation(fields: [contactInfoId], references: [id])
+  contactInfoId     Int         @unique
+  logo_photo        String?     // Stores the file path or URL
+  staff_n_upper_limit Int
+  vacancies         Vacancy[]
+}
+
+model Vacancy {
+  id              Int          @id @default(autoincrement())
+  employer        Employer     @relation(fields: [employerId], references: [id])
+  employerId      Int
+  title           String
+  job_category    Job_category @relation(fields: [jobCategoryId], references: [id])
+  jobCategoryId   Int
+  description     String
+  occupation_type String
+  publication_date DateTime
+}
+
+model JobSeeker {
+  id            Int       @id @default(autoincrement())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        Int       @unique
+  firstName     String
+  lastName      String
+  targetRole    String?
+  contactInfo   ContactInfo @relation(fields: [contactInfoId], references: [id])
+  contactInfoId Int         @unique
+  photo         String?   // Stores the file path or URL
+  date_of_birth DateTime
+  resumes       Resume[]
+}
+
+model Resume {
+  id          Int       @id @default(autoincrement())
+  jobSeeker   JobSeeker @relation(fields: [jobSeekerId], references: [id])
+  jobSeekerId Int
+  description String
+}
+
