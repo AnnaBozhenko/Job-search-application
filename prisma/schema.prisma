@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,90 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  role      String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  employer  Employer?
+  jobSeeker JobSeeker?
+
+  @@map("app_user")
+}
+
+model ContactInfo {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  websiteAddress String?    @map("website_address")
+  geoLocation    String?    @map("geo_location")
+  phone          String?
+  employer       Employer?
+  jobSeeker      JobSeeker?
+
+  @@map("contact_info")
+}
+
+model JobCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  vacancies Vacancy[]
+
+  @@map("job_category")
+}
+
+model Employer {
+  id               Int         @id @default(autoincrement())
+  userId           Int         @unique
+  companyName      String      @unique @map("company_name")
+  contactInfoId    Int         @unique @map("contact_info_id")
+  logoPhoto        String?     @map("logo_photo")
+  staffNUpperLimit Int         @map("staff_n_upper_limit")
+  contactInfo      ContactInfo @relation(fields: [contactInfoId], references: [id])
+  user             User        @relation(fields: [userId], references: [id])
+  vacancies        Vacancy[]
+
+  @@map("employer")
+}
+
+model Vacancy {
+  id              Int         @id @default(autoincrement())
+  employerId      Int         @map("employer_id")
+  title           String
+  jobCategoryId   Int         @map("job_category_id")
+  description     String
+  occupationType  String      @map("occupation_type")
+  publicationDate DateTime    @map("publication_date")
+  employer        Employer    @relation(fields: [employerId], references: [id])
+  jobCategory     JobCategory @relation(fields: [jobCategoryId], references: [id])
+
+  @@map("vacancy")
+}
+
+model JobSeeker {
+  id            Int         @id @default(autoincrement())
+  userId        Int         @unique @map("user_id")
+  firstName     String      @map("first_name")
+  lastName      String      @map("last_name")
+  targetRole    String?     @map("target_role")
+  contactInfoId Int         @unique @map("contact_info_id")
+  photo         String?
+  dateOfBirth   DateTime    @map("date_of_birth")
+  contactInfo   ContactInfo @relation(fields: [contactInfoId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  resumes       Resume[]
+
+  @@map("job_seeker")
+}
+
+model Resume {
+  id          Int       @id @default(autoincrement())
+  jobSeekerId Int       @map("job_seeker_id")
+  description String
+  jobSeeker   JobSeeker @relation(fields: [jobSeekerId], references: [id])
+
+  @@map("resume")
 }
