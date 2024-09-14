@@ -11,12 +11,12 @@ export async function GET(request: Request) {
                 contactInfo: {
                     select: {
                         email: true,
-                        website_address: true,
+                        websiteAddress: true,
                         geoLocation: true,
                     },
                 },
                 companyName: true,
-                staff_n_upper_limit: true,
+                staffNUpperLimit: true,
             },
         });
         return NextResponse.json(employers);
@@ -32,19 +32,19 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { userId,
                 companyName, 
-                logo_photo, 
-                staff_n_upper_limit, 
-                email, website_address, geoLocation, phone} = body;
+                logoPhoto, 
+                staffNUpperLimit, 
+                email, websiteAddress, geoLocation, phone} = body;
         
         // check for obligatory fields
-        if (!userId || !companyName || !staff_n_upper_limit || !email) {
+        if (!userId || !companyName || !staffNUpperLimit || !email) {
             return NextResponse.json({error: "Missed required fields"}, {status: 400});
         }
 
         // get the user
         const user = await prisma.user.findUnique({where: {id: userId}});
         if (!user) {
-            return NextResponse.json({error: "The user was not found"}, { status: 404 });
+            return NextResponse.json({error: "User was not found"}, { status: 404 });
         }
 
         // check if provided company already exists
@@ -53,26 +53,27 @@ export async function POST(request: Request) {
             return NextResponse.json({error: "Employer already exists"}, {status: 400});
         }
 
-        // construct contact info data
-        const contactInfo = {
-            email: email,
-            website_address: website_address || null,
-            geoLocation: geoLocation || null,
-            phone: phone || null};
-
         const employer = await prisma.employer.create({
             data: {
                 user: {connect: {id: userId }},
                 companyName: companyName,
-                staff_n_upper_limit: staff_n_upper_limit,
+                staffNUpperLimit: staffNUpperLimit,
                 contactInfo: {
-                    create: contactInfo  
+                    create: {
+                        email: email,
+                        websiteAddress: websiteAddress ?? undefined,
+                        geoLocation: geoLocation ?? undefined,
+                        phone: phone ?? undefined,
+                    }  
                 },
-                logo_photo: logo_photo || null,
+                logoPhoto: logoPhoto ?? undefined,
             },
-            include : {
-                contactInfo: true,
-            },
+            select: {
+                companyName: true,
+                staffNUpperLimit: true,
+                logoPhoto: true,
+                contactInfo: { select: { email: true, } }
+            }
         });
 
         return NextResponse.json({employer}, {status: 201})
@@ -87,45 +88,48 @@ export async function PUT(request: Request) {
     try {
         const {userId, 
                companyName, 
-               logo_photo, 
-               staff_n_upper_limit,
-               email, website_address, phone, geoLocation} = await request.json();
+               logoPhoto, 
+               staffNUpperLimit,
+               email, websiteAddress, phone, geoLocation} = await request.json();
         
         // check for must-have fields
         if (!userId) {
-            return NextResponse.json({error: "Missed required fields"}, {status: 400});
+            return NextResponse.json({error: "Missed required field"}, {status: 400});
         }
 
         const user = await prisma.user.findUnique({ where: {id: userId} });
         if (!user) {
-            return NextResponse.json({error: "User not found"}, {status: 404});
+            return NextResponse.json({error: "User was not found"}, {status: 404});
         }
 
-        const employer = await prisma.employer.findUnique({ where: {userId: user.id},
-                                                            include: {contactInfo: true,}, });
-        
+        const employer = await prisma.employer.findUnique({ where: {userId: user.id}, });
         if (!employer) {
-            return NextResponse.json({error: "Employer not found"}, { status: 404 });
+            return NextResponse.json({error: "Employer was not found"}, { status: 404 });
         }
 
         const updatedEmployer = await prisma.employer.update({
             where: {id: employer.id},
             data: {
-                companyName: companyName ?? employer.companyName,
-                contactInfo: (email || website_address || phone || geoLocation) ? {
+                companyName: companyName ?? undefined,
+                contactInfo: {
                     update: {
-                        email: email ?? employer.contactInfo?.email,
-                        website_address: website_address ?? employer.contactInfo?.website_address,
-                        phone: phone ?? employer.contactInfo?.phone, 
-                        geoLocation: geoLocation ?? employer.contactInfo?.geoLocation,
+                        email: email ?? undefined,
+                        websiteAddress: websiteAddress ?? undefined,
+                        phone: phone ?? undefined, 
+                        geoLocation: geoLocation ?? undefined,
                     }
-                } : undefined,
-                logo_photo: logo_photo ?? employer.logo_photo,
-                staff_n_upper_limit: staff_n_upper_limit ?? employer.staff_n_upper_limit,
+                } ,
+                logoPhoto: logoPhoto ?? undefined,
+                staffNUpperLimit: staffNUpperLimit ?? undefined,
+            },
+            select: {
+                companyName: true,
+                logoPhoto: true,
+                staffNUpperLimit: true,
             }
         });
 
-        return NextResponse.json(updatedEmployer);
+        return NextResponse.json({updatedEmployer});
     } catch (error) {
         return NextResponse.json({error: "Failed to update Employer"}, {status: 500});
     }
@@ -137,14 +141,14 @@ export async function DELETE(request: Request) {
         const {employerId} = await request.json();
 
         if(!employerId) {
-            return NextResponse.json({error: "Missed required fields"}, {status: 400});
+            return NextResponse.json({error: "Missed required field"}, {status: 400});
         }
 
         await prisma.employer.delete({where: {id: employerId}});
 
         return NextResponse.json({message: "Employer was deleted"});
     } catch (error) {
-        return NextResponse.json({error: "Employer not found"}, {status: 404});
+        return NextResponse.json({error: "Employer was not found"}, {status: 404});
     }
 } 
 
