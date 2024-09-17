@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
     try {
         const users = await prisma.user.findMany({
             select: {

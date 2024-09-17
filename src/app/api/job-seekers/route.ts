@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
     const jobSeekers = await prisma.jobSeeker.findMany({
         select: {
             firstName: true,
@@ -79,7 +79,8 @@ export async function POST(request: Request) {
         if (!userId || !firstName || !lastName || !email || !dateOfBirth) {
             return NextResponse.json({error: "Missing required fields"}, {status: 400});
         }
-
+        
+        // check for email
         const jobSeeker = await prisma.jobSeeker.create({
             data: {
                 user: { connect: { id: userId } },

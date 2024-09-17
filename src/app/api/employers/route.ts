@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // GET on many employers
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
     try {
         const employers = await prisma.employer.findMany({
             select: {
