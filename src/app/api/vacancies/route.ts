@@ -8,6 +8,7 @@ export async function GET(_request: Request) {
     try {
         const vacancies = await prisma.vacancy.findMany({
             select: {
+                id: true,
                 employer: {
                     select: {
                         companyName: true,
